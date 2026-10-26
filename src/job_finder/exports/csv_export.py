@@ -5,7 +5,7 @@ from __future__ import annotations
 import csv
 from pathlib import Path
 
-from jobfinder.models import JobMatch
+from job_finder.models import JobMatch
 
 _COLUMNS = [
     "title", "company", "url", "location", "work_arrangement",

@@ -6,7 +6,7 @@ import ipaddress
 import socket
 from urllib.parse import urljoin, urlparse
 
-from jobfinder.models import canonicalize_url
+from job_finder.models import canonicalize_url
 
 _BLOCKED_HOSTNAMES = {"localhost", "metadata.google.internal"}
 

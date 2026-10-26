@@ -42,7 +42,12 @@ class CrawlEngine:
 
     async def crawl(self, seed_urls: Iterable[str]) -> list[JobPosting]:
         connector = aiohttp.TCPConnector(limit=self.config.max_concurrency)
-        headers = {"User-Agent": self.config.user_agent}
+        user_agent = self.config.user_agent
+
+        if not isinstance(user_agent,str):
+            raise TypeError(f"user_agent must be a string, got {type(user_agent).__name__}")
+        
+        headers = {"User-Agent": user_agent}
         timeout = aiohttp.ClientTimeout(total=self.config.request_timeout_seconds)
         async with aiohttp.ClientSession(
             connector=connector, headers=headers, timeout=timeout,

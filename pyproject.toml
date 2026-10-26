@@ -18,7 +18,10 @@ dev = [
 ]
 
 [project.scripts]
-jobfinder = "jobfinder.cli:main"
+jobfinder = "job_finder.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
 
 [build-system]
 requires = ["setuptools>=68"]

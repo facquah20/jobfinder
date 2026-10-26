@@ -1,6 +1,6 @@
-from jobfinder.matching.parser import parse_query
-from jobfinder.matching.scorer import score_job
-from jobfinder.models import (
+from job_finder.matching.parser import parse_query
+from job_finder.matching.scorer import score_job
+from job_finder.models import (
     EmploymentType, JobPosting, WorkArrangement,
 )
 

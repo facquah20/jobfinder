@@ -25,7 +25,7 @@ def _cmd_search(args: argparse.Namespace) -> int:
     if args.no_robots:
         cfg.respect_robots = False
 
-    seeds = [line.strip() for line in args.seeds if line.strip()]
+    seeds = [line.strip() for line in args.seed if line.strip()]
     if not seeds and args.seeds_file:
         with open(args.seeds_file, encoding="utf-8") as fh:
             seeds = [line.strip() for line in fh if line.strip()]

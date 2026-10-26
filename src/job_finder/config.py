@@ -3,14 +3,15 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
+DEFAULT_USER_AGENT = "job_finder/0.1 (+https://github.com/facquah20/jobfinder)"
 
 @dataclass(slots=True)
 class CrawlConfig:
     """Conservative crawl defaults. Override via CLI or env."""
 
-    user_agent: str = "jobfinder/0.1 (+https://example.invalid/bot)"
+    user_agent: str = DEFAULT_USER_AGENT
     max_concurrency: int = 5
     per_host_concurrency: int = 2
     per_host_delay_seconds: float = 1.0
@@ -25,7 +26,7 @@ class CrawlConfig:
     @classmethod
     def from_env(cls) -> "CrawlConfig":
         return cls(
-            user_agent=os.environ.get("JOBFINDER_USER_AGENT", cls.user_agent),
+            user_agent=os.environ.get("JOBFINDER_USER_AGENT", DEFAULT_USER_AGENT),
             max_concurrency=int(os.environ.get("JOBFINDER_CONCURRENCY", "5")),
             per_host_delay_seconds=float(os.environ.get("JOBFINDER_HOST_DELAY", "1.0")),
             request_timeout_seconds=float(os.environ.get("JOBFINDER_TIMEOUT", "20.0")),

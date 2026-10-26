@@ -5,8 +5,8 @@ from __future__ import annotations
 import pytest
 from aiohttp import web
 
-from jobfinder.config import CrawlConfig
-from jobfinder.crawler.engine import CrawlEngine
+from job_finder.config import CrawlConfig
+from job_finder.crawler.engine import CrawlEngine
 
 FIXTURE = None
 
