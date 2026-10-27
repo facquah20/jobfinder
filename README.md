@@ -218,20 +218,20 @@ These principles explain nearly every implementation choice in the codebase.
 
 | Module | Responsibility |
 |---|---|
-| `jobfinder/cli.py` | Argument parsing, orchestration, output formatting |
-| `jobfinder/config.py` | Runtime configuration dataclass, environment variables |
-| `jobfinder/models.py` | Pydantic models: `RawJob`, `JobPosting`, `SearchQuery`, `JobMatch`, `CrawlStats`, `FetchResult`, enums, `canonicalize_url` |
-| `jobfinder/crawler/engine.py` | Async crawl loop, retries, per-host limits, adapter dispatch |
-| `jobfinder/crawler/robots.py` | `robots.txt` fetch and cache |
-| `jobfinder/crawler/url_utils.py` | SSRF guards, redirect safety, relative URL resolution |
-| `jobfinder/adapters/base.py` | Adapter `Protocol` and priority registry |
-| `jobfinder/adapters/schema_org.py` | JSON-LD `JobPosting` extraction (handles `@graph`, nested arrays) |
-| `jobfinder/adapters/generic_html.py` | Conservative heuristic fallback |
-| `jobfinder/matching/parser.py` | NL query → `SearchQuery` |
-| `jobfinder/matching/scorer.py` | Weighted, explainable scoring |
-| `jobfinder/storage/database.py` | SQLite repository with upsert and dedupe |
-| `jobfinder/exports/csv_export.py` | CSV export |
-| `jobfinder/exports/json_export.py` | JSON export |
+| `jobfinder/src/job_finder/cli.py` | Argument parsing, orchestration, output formatting |
+| `jobfinder/src/job_finder/config.py` | Runtime configuration dataclass, environment variables |
+| `jobfinder/src/job_finder/models.py` | Pydantic models: `RawJob`, `JobPosting`, `SearchQuery`, `JobMatch`, `CrawlStats`, `FetchResult`, enums, `canonicalize_url` |
+| `jobfinder/src/job_finder/crawler/engine.py` | Async crawl loop, retries, per-host limits, adapter dispatch |
+| `jobfinder/src/job_finder/crawler/robots.py` | `robots.txt` fetch and cache |
+| `jobfinder/src/job_finder/crawler/url_utils.py` | SSRF guards, redirect safety, relative URL resolution |
+| `jobfinder/src/job_finder/adapters/base.py` | Adapter `Protocol` and priority registry |
+| `jobfinder/src/job_finder/adapters/schema_org.py` | JSON-LD `JobPosting` extraction (handles `@graph`, nested arrays) |
+| `jobfinder/src/job_finder/adapters/generic_html.py` | Conservative heuristic fallback |
+| `jobfinder/src/job_finder/matching/parser.py` | NL query → `SearchQuery` |
+| `jobfinder/src/job_finder/matching/scorer.py` | Weighted, explainable scoring |
+| `jobfinder/src/job_finder/storage/database.py` | SQLite repository with upsert and dedupe |
+| `jobfinder/src/job_finder/exports/csv_export.py` | CSV export |
+| `jobfinder/src/job_finder/exports/json_export.py` | JSON export |
 
 ---
 
