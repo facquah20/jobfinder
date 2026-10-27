@@ -137,6 +137,39 @@ def _cmd_stats(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_dashboard(args: argparse.Namespace) -> int:
+    try:
+        import uvicorn
+        from job_finder.dashboard import create_app
+    except ImportError as exc:
+        print(
+            "error: the dashboard requires the optional dependencies; "
+            'install them with `pip install -e ".[dashboard]"`',
+            file=sys.stderr,
+        )
+        log.error("dashboard dependency is unavailable: %s", exc)
+        return 2
+
+    cfg = CrawlConfig.from_env()
+    if args.database:
+        cfg.database_path = args.database
+    print(f"Jobfinder dashboard: http://127.0.0.1:{args.port}")
+    uvicorn.run(
+        create_app(cfg.database_path),
+        host="127.0.0.1",
+        port=args.port,
+        log_level="info",
+    )
+    return 0
+
+
+def _port(value: str) -> int:
+    port = int(value)
+    if not 1 <= port <= 65535:
+        raise argparse.ArgumentTypeError("port must be between 1 and 65535")
+    return port
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="jobfinder")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -164,6 +197,11 @@ def build_parser() -> argparse.ArgumentParser:
     s = sub.add_parser("stats", help="Show stored job counts")
     s.add_argument("--database", default="jobfinder.sqlite3")
     s.set_defaults(func=_cmd_stats)
+
+    d = sub.add_parser("dashboard", help="Run the local web dashboard")
+    d.add_argument("--database", default=None, help="SQLite database path")
+    d.add_argument("--port", type=_port, default=8000, help="Local port (default: 8000)")
+    d.set_defaults(func=_cmd_dashboard)
 
     return parser
 

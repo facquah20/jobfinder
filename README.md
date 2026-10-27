@@ -67,7 +67,7 @@ Being explicit protects both users and maintainers:
 
 ## 3. Current status and capability matrix
 
-The project is being built in the five stages described in the original specification. **Stages 1–3** are implemented in source code; run the tests locally to verify them (see §18).
+The project is being built in the five stages described in the original specification. **Stages 1–3** and the Stage 5 local web dashboard are implemented in source code; run the tests locally to verify them (see §18).
 
 | Capability | Stage | Status |
 |---|---|---|
@@ -90,7 +90,7 @@ The project is being built in the five stages described in the original specific
 | Playwright fallback for JS-rendered pages | 3 | ✅ Implemented (optional) |
 | Job-status re-verification | 4 | ❌ Not yet |
 | Scheduled / repeated runs | 4 | ❌ Not yet |
-| Web dashboard | 5 | ❌ Not yet |
+| Local web dashboard | 5 | ✅ Implemented |
 | Semantic / embedding matcher | 5 | ❌ Not yet |
 | Multi-user profiles | 5 | ❌ Not yet |
 | Notifications | 5 | ❌ Not yet |
@@ -373,6 +373,18 @@ pip install -e ".[browser]"
 playwright install chromium
 ```
 
+Install the optional dashboard dependencies to browse, filter, re-rank, and export saved jobs in a local web UI:
+
+```bash
+pip install -e ".[dashboard]"
+jobfinder dashboard
+```
+
+The dashboard opens at `http://127.0.0.1:8000`. It reads the same SQLite database as
+the CLI (`JOBFINDER_DB` or `--database`), and can start crawls from career-page URLs.
+It binds to localhost only and rejects non-local Host headers; it is intended for a
+single local user and has no authentication for network deployment.
+
 ### 7.3 Verify installation
 
 ```bash
@@ -380,7 +392,8 @@ python -m jobfinder --help
 pytest -q
 ```
 
-If both commands succeed, you're ready.
+If both commands succeed, you're ready. The dashboard is an optional install; see
+the commands above to enable it.
 
 ---
 
@@ -498,7 +511,24 @@ usage: jobfinder stats [--database PATH]
 #   generic_html: 4
 ```
 
-### 9.3 Exit codes
+### 9.3 `jobfinder dashboard`
+
+Run the local web dashboard over the existing SQLite database.
+
+```bash
+jobfinder dashboard [--database PATH] [--port PORT]
+```
+
+- `--database` overrides `JOBFINDER_DB`; the default is `jobfinder.sqlite3`.
+- `--port` sets the local port (default `8000`).
+- The server binds to `127.0.0.1` only. It displays stored jobs and crawl summaries,
+  supports title/skill and location search, remote/source/status filters, pagination,
+  CSV export, and starting a crawl from supplied career-page URLs.
+- Crawls use the same crawler safety checks, robots enforcement, rate limits, and
+  SQLite persistence as the CLI. Search results use the existing explainable scorer.
+- Install the optional dependencies with `pip install -e ".[dashboard]"`.
+
+### 9.4 Exit codes
 
 | Code | Meaning |
 |---|---|
@@ -788,7 +818,7 @@ CREATE TABLE run_stats (
 - **Payload as JSON.** Storing the full `JobPosting` serialised means the schema can evolve without migrations. Pydantic handles validation on read.
 - **`first_seen` / `last_seen`.** Enables incremental crawling (Stage 4) to skip recently-verified jobs.
 - **No separate `skills` / `locations` tables.** Deliberately denormalised for MVP simplicity. Normalisation is a Stage 4 concern.
-- **`run_stats` table.** Every CLI invocation records a stats row. Useful for auditing.
+- **`run_stats` table.** Every completed CLI or dashboard crawl records a stats row. Useful for auditing.
 
 ### 15.3 Migrating to PostgreSQL
 
