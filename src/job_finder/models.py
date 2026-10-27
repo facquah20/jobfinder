@@ -180,4 +180,5 @@ class FetchResult(BaseModel):
     status: int
     content: bytes | None = None
     final_url: str | None = None
+    content_type: str | None = None
     error: str | None = None

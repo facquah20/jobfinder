@@ -4,6 +4,9 @@ from __future__ import annotations
 
 import os
 from dataclasses import dataclass
+from dotenv import load_dotenv
+
+load_dotenv()
 
 DEFAULT_USER_AGENT = "job_finder/0.1 (+https://github.com/facquah20/jobfinder)"
 
@@ -21,6 +24,9 @@ class CrawlConfig:
     max_pages_per_host: int = 200
     max_total_pages: int = 5_000
     respect_robots: bool = True
+    playwright_fallback: bool = False
+    google_search_api_key: str | None = None
+    google_search_engine_id: str | None = None
     database_path: str = "jobfinder.sqlite3"
 
     @classmethod
@@ -31,5 +37,8 @@ class CrawlConfig:
             per_host_delay_seconds=float(os.environ.get("JOBFINDER_HOST_DELAY", "1.0")),
             request_timeout_seconds=float(os.environ.get("JOBFINDER_TIMEOUT", "20.0")),
             respect_robots=os.environ.get("JOBFINDER_ROBOTS", "1") != "0",
+            playwright_fallback=os.environ.get("JOBFINDER_PLAYWRIGHT", "0") == "1",
+            google_search_api_key=os.environ.get("JOBFINDER_GOOGLE_API_KEY"),
+            google_search_engine_id=os.environ.get("JOBFINDER_GOOGLE_CSE_ID"),
             database_path=os.environ.get("JOBFINDER_DB", "jobfinder.sqlite3"),
         )
