@@ -11,7 +11,7 @@ import re
 
 from bs4 import BeautifulSoup
 
-from job_finder.adapters.base import register
+from job_finder.adapters.base import FeedRequest, register
 from job_finder.crawler.url_utils import resolve_relative
 from job_finder.models import RawJob
 
@@ -31,7 +31,10 @@ class GenericHtmlAdapter:
     priority = 90
 
     def can_handle(self, url: str, html: str, content_type: str) -> bool:
-        return True  # always eligible as last resort
+        return "html" in content_type.lower()
+
+    def feed_requests(self, url: str, html: str) -> list[FeedRequest]:
+        return []
 
     def extract(self, url: str, html: str) -> list[RawJob]:
         soup = BeautifulSoup(html, "lxml")

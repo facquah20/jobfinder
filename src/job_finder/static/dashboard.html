@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f5f7fb">
+    <title>Jobfinder — Discover your next role</title>
+    <link rel="stylesheet" href="/assets/dashboard.css">
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <a class="brand" href="/" aria-label="Jobfinder home">
+          <span class="brand-mark">J</span>
+          <span>jobfinder<span class="brand-dot">.</span></span>
+        </a>
+        <div class="sidebar-label">WORKSPACE</div>
+        <nav class="nav-list" aria-label="Main navigation">
+          <a class="nav-item active" href="#overview"><span class="nav-icon">◫</span> Overview</a>
+          <a class="nav-item" href="#jobs-section"><span class="nav-icon">▤</span> Discover jobs <span class="nav-count" id="nav-job-count">0</span></a>
+          <a class="nav-item" href="#sources"><span class="nav-icon">◎</span> Sources</a>
+        </nav>
+        <div class="sidebar-bottom">
+          <div class="privacy-card">
+            <span class="privacy-icon">⌑</span>
+            <strong>Your search, your machine</strong>
+            <p>Jobfinder runs locally. Your database stays on this device.</p>
+          </div>
+          <div class="sidebar-version"><span class="status-dot"></span> Local workspace</div>
+        </div>
+      </aside>
+
+      <main class="main-content" id="overview">
+        <header class="topbar">
+          <div class="breadcrumbs">Workspace <span>/</span> <strong>Overview</strong></div>
+          <button class="button button-outline button-small" id="refresh-button" type="button"><span class="refresh-icon">↻</span> Refresh data</button>
+        </header>
+
+        <section class="page-heading">
+          <div>
+            <div class="eyebrow"><span class="eyebrow-line"></span> YOUR CAREER WORKSPACE</div>
+            <h1>Find work that<br><span>moves you forward.</span></h1>
+            <p class="heading-copy">Your saved opportunities, thoughtfully organized and ranked around what matters to you.</p>
+          </div>
+          <div class="heading-art" aria-hidden="true">
+            <div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
+            <div class="art-center"><span>✳</span></div>
+            <div class="art-card art-card-top"><span class="art-mini-dot"></span> A better fit is out there</div>
+            <div class="art-card art-card-bottom"><span class="art-star">✦</span> Keep looking up</div>
+          </div>
+        </section>
+
+        <section class="stats-grid" aria-label="Job search statistics">
+          <article class="stat-card">
+            <div class="stat-top"><span class="stat-icon icon-lilac">▤</span><span class="stat-caption">IN YOUR LIBRARY</span></div>
+            <div class="stat-value" id="total-jobs">—</div>
+            <div class="stat-foot"><span class="stat-accent">opportunities</span> discovered</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-top"><span class="stat-icon icon-mint">⌖</span><span class="stat-caption">COMPANIES</span></div>
+            <div class="stat-value" id="total-companies">—</div>
+            <div class="stat-foot">in your opportunity pool</div>
+          </article>
+          <article class="stat-card">
+            <div class="stat-top"><span class="stat-icon icon-peach">⌂</span><span class="stat-caption">REMOTE FRIENDLY</span></div>
+            <div class="stat-value" id="remote-jobs">—</div>
+            <div class="stat-foot">roles with remote options</div>
+          </article>
+          <article class="stat-card stat-card-run">
+            <div class="stat-top"><span class="stat-icon icon-blue">↗</span><span class="stat-caption">LAST DISCOVERY</span></div>
+            <div class="stat-value stat-date" id="last-run">Not yet</div>
+            <div class="stat-foot" id="last-run-detail">Start a crawl to find roles</div>
+          </article>
+        </section>
+
+        <section class="discovery-panel">
+          <div class="panel-copy">
+            <div class="eyebrow"><span class="sparkle">✦</span> FRESH OPPORTUNITIES</div>
+            <h2>Bring new roles into view</h2>
+            <p>Add career-page URLs to crawl. Jobfinder respects each site's robots.txt and saves results to your local library.</p>
+          </div>
+          <form id="crawl-form" class="crawl-form">
+            <label for="seed-urls">Career page URLs <span>one per line</span></label>
+            <textarea id="seed-urls" rows="3" placeholder="https://careers.example.com/jobs&#10;https://another-company.com/careers" required></textarea>
+            <div class="crawl-form-footer">
+              <span class="crawl-note"><span class="shield">✓</span> Respectful crawling is on</span>
+              <button class="button button-primary" type="submit" id="crawl-button"><span>↗</span> Start discovery</button>
+            </div>
+          </form>
+          <div class="crawl-notice" id="crawl-notice" role="status" aria-live="polite"></div>
+        </section>
+
+        <section class="jobs-section" id="jobs-section">
+          <div class="section-heading">
+            <div>
+              <div class="eyebrow">YOUR OPPORTUNITY POOL</div>
+              <h2>Explore roles <span class="result-count" id="result-count"></span></h2>
+            </div>
+            <button class="button button-outline export-button" id="export-button" type="button">Export CSV <span>↓</span></button>
+          </div>
+          <form class="search-panel" id="search-form">
+            <div class="search-input-wrap">
+              <span class="search-icon">⌕</span>
+              <input id="query-input" type="search" placeholder="Try “Senior Python engineer”" maxlength="300" aria-label="Search jobs">
+            </div>
+            <div class="search-divider"></div>
+            <div class="location-input-wrap"><span class="location-icon">⌖</span><input id="location-input" type="search" placeholder="Location" maxlength="200" aria-label="Filter by location"></div>
+            <label class="remote-toggle"><input id="remote-input" type="checkbox"><span class="toggle"></span><span>Remote</span></label>
+            <button class="button button-primary search-button" type="submit">Search <span>→</span></button>
+          </form>
+          <div class="filter-row">
+            <span class="filter-label">FILTER BY</span>
+            <select id="source-filter" aria-label="Filter by source"><option value="">All sources</option></select>
+            <select id="arrangement-filter" aria-label="Filter by arrangement">
+              <option value="">Any arrangement</option><option value="remote">Remote</option><option value="hybrid">Hybrid</option><option value="onsite">On-site</option><option value="unknown">Unknown</option>
+            </select>
+            <select id="status-filter" aria-label="Filter by status">
+              <option value="">Any status</option><option value="active">Active</option><option value="unknown">Unverified</option><option value="expired">Expired</option>
+            </select>
+            <div class="filter-spacer"></div>
+            <span class="sort-label">SORTED BY</span><span class="sort-value" id="sort-label">Recently added <span>⌄</span></span>
+          </div>
+          <div id="jobs-list" class="jobs-list" aria-live="polite"></div>
+          <div class="pagination"><span id="pagination-label"></span><div class="pagination-buttons"><button id="prev-page" type="button" aria-label="Previous page">←</button><button id="next-page" type="button" aria-label="Next page">→</button></div></div>
+        </section>
+
+        <section class="sources-section" id="sources">
+          <div class="section-heading compact-heading"><div><div class="eyebrow">YOUR DATA</div><h2>Discovery sources</h2></div></div>
+          <div id="source-cards" class="source-cards"></div>
+        </section>
+        <footer class="footer"><span>Made for a more thoughtful job search.</span><span>Jobfinder <span class="footer-dot">•</span> Private by design</span></footer>
+      </main>
+    </div>
+    <script src="/assets/dashboard.js" defer></script>
+  </body>
+</html>

@@ -71,5 +71,19 @@ class JobRepository:
         )
         self.conn.commit()
 
+    def recent_runs(self, limit: int = 5) -> list[dict]:
+        """Return the most recently recorded crawl summaries."""
+        if limit < 1:
+            raise ValueError("limit must be at least 1")
+        rows = self.conn.execute(
+            "SELECT id, finished_at, payload FROM run_stats "
+            "ORDER BY id DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        return [
+            {"id": row[0], "finished_at": row[1], **json.loads(row[2])}
+            for row in rows
+        ]
+
     def close(self) -> None:
         self.conn.close()

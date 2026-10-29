@@ -9,6 +9,9 @@ __pycache__/
 #sqlite
 *.sqlite3
 
+#lock
+poetry.lock
+
 # Distribution / packaging
 .Python
 build/
@@ -28,6 +31,7 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+include
 
 # PyInstaller
 #   Usually these files are written by a python script from a template

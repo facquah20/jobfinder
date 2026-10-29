@@ -7,7 +7,7 @@ from typing import Any
 
 from bs4 import BeautifulSoup
 
-from job_finder.adapters.base import register
+from job_finder.adapters.base import FeedRequest, register
 from job_finder.crawler.url_utils import resolve_relative
 from job_finder.models import RawJob
 
@@ -73,7 +73,10 @@ class SchemaOrgAdapter:
     priority = 10
 
     def can_handle(self, url: str, html: str, content_type: str) -> bool:
-        return "ld+json" in html and "JobPosting" in html
+        return "html" in content_type.lower() and "ld+json" in html and "JobPosting" in html
+
+    def feed_requests(self, url: str, html: str) -> list[FeedRequest]:
+        return []
 
     def extract(self, url: str, html: str) -> list[RawJob]:
         soup = BeautifulSoup(html, "lxml")

@@ -67,7 +67,7 @@ Being explicit protects both users and maintainers:
 
 ## 3. Current status and capability matrix
 
-The project is being built in the five stages described in the original specification. This README documents **Stages 1 and 2**, which are complete as source code (tests must be run locally to verify — see §18).
+The project is being built in the five stages described in the original specification. **Stages 1–3** and the Stage 5 local web dashboard are implemented in source code; run the tests locally to verify them (see §18).
 
 | Capability | Stage | Status |
 |---|---|---|
@@ -85,17 +85,17 @@ The project is being built in the five stages described in the original specific
 | CSV export | 2 | ✅ Implemented |
 | JSON export | 2 | ✅ Implemented |
 | CLI: `search`, `stats` | 2 | ✅ Implemented |
-| Provider adapters (Greenhouse, Lever, Ashby, Workday) | 3 | ❌ Not yet |
-| Company-name → careers-page discovery | 3 | ❌ Not yet |
-| Playwright fallback for JS-rendered pages | 3 | ❌ Not yet |
+| Provider adapters (Greenhouse, Lever, Ashby, Workday) | 3 | ✅ Implemented |
+| Company-name → careers-page discovery (Google Programmable Search) | 3 | ✅ Implemented |
+| Playwright fallback for JS-rendered pages | 3 | ✅ Implemented (optional) |
 | Job-status re-verification | 4 | ❌ Not yet |
 | Scheduled / repeated runs | 4 | ❌ Not yet |
-| Web dashboard | 5 | ❌ Not yet |
+| Local web dashboard | 5 | ✅ Implemented |
 | Semantic / embedding matcher | 5 | ❌ Not yet |
 | Multi-user profiles | 5 | ❌ Not yet |
 | Notifications | 5 | ❌ Not yet |
 
-The Stage 1–2 boundary is deliberate: get extraction, scoring, and dedupe **correct and tested** before adding breadth.
+Stages 1–2 established extraction, scoring, and deduplication before Stage 3 added provider feeds, company discovery, and optional browser rendering.
 
 ---
 
@@ -169,8 +169,8 @@ These principles explain nearly every implementation choice in the codebase.
             │                      │       ┌─────────────┼─────────────┐
             │                      │       ▼             ▼             ▼
             │                      │  ┌──────────┐ ┌───────────┐ ┌──────────┐
-            │                      │  │schema_org│ │ generic_  │ │ (Stage 3:│
-            │                      │  │          │ │   html    │ │ providers)│
+            │                      │  │schema_org│ │ generic_  │ │ ATS APIs │
+            │                      │  │          │ │   html    │ │  (Stage 3)│
             │                      │  └──────────┘ └───────────┘ └──────────┘
             │                      │                     │
             │                      │                     ▼
@@ -208,11 +208,12 @@ These principles explain nearly every implementation choice in the codebase.
    - `RobotsCache.allowed()` is checked (cached per host).
    - The URL is fetched with retry, per-host delay, and per-host concurrency.
    - Redirects are followed up to `max_redirects`, and **the final URL is re-checked for safety**.
-6. HTML is passed to the adapter registry in priority order.
-7. Extracted `RawJob` objects are normalised into `JobPosting` records.
-8. All `JobPosting` records from the run are upserted to SQLite.
-9. Every stored job is scored against the query, producing `JobMatch` objects.
-10. Matches are sorted by score, truncated to `--limit`, printed, and optionally exported.
+6. HTML is passed to the adapter registry in priority order. Recognized ATS pages also trigger a safety-checked public provider-feed request.
+7. If static extraction finds no jobs and Playwright is enabled, the page is rendered and passed through the same adapters.
+8. Extracted `RawJob` objects are normalised into `JobPosting` records.
+9. All `JobPosting` records from the run are upserted to SQLite.
+10. Every stored job is scored against the query, producing `JobMatch` objects.
+11. Matches are sorted by score, truncated to `--limit`, printed, and optionally exported.
 
 ### 5.3 Module responsibilities
 
@@ -225,8 +226,11 @@ These principles explain nearly every implementation choice in the codebase.
 | `jobfinder/src/job_finder/crawler/robots.py` | `robots.txt` fetch and cache |
 | `jobfinder/src/job_finder/crawler/url_utils.py` | SSRF guards, redirect safety, relative URL resolution |
 | `jobfinder/src/job_finder/adapters/base.py` | Adapter `Protocol` and priority registry |
+| `jobfinder/src/job_finder/adapters/{greenhouse,lever,ashby,workday}.py` | Public ATS feed adapters |
 | `jobfinder/src/job_finder/adapters/schema_org.py` | JSON-LD `JobPosting` extraction (handles `@graph`, nested arrays) |
 | `jobfinder/src/job_finder/adapters/generic_html.py` | Conservative heuristic fallback |
+| `jobfinder/src/job_finder/discovery/company_discovery.py` | Ranks careers-page candidates returned by the configured search source |
+| `jobfinder/src/job_finder/discovery/search_sources.py` | Google Programmable Search JSON API client |
 | `jobfinder/src/job_finder/matching/parser.py` | NL query → `SearchQuery` |
 | `jobfinder/src/job_finder/matching/scorer.py` | Weighted, explainable scoring |
 | `jobfinder/src/job_finder/storage/database.py` | SQLite repository with upsert and dedupe |
@@ -347,6 +351,8 @@ class CrawlStats(BaseModel):
 - **Python 3.12+** (uses `StrEnum`, PEP 604 union syntax, `slots=True` dataclasses)
 - A POSIX-like shell (Linux, macOS, WSL). Windows users should use WSL or adjust activation paths.
 - No external services, API keys, or databases required.
+- Company-name discovery requires a Google Programmable Search Engine and API key.
+- Playwright rendering is optional and requires a separately installed Chromium browser.
 
 ### 7.2 Setup
 
@@ -360,6 +366,25 @@ source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -e ".[dev]"
 ```
 
+Install the optional browser dependency and browser binary only if you want JavaScript rendering:
+
+```bash
+pip install -e ".[browser]"
+playwright install chromium
+```
+
+Install the optional dashboard dependencies to browse, filter, re-rank, and export saved jobs in a local web UI:
+
+```bash
+pip install -e ".[dashboard]"
+jobfinder dashboard
+```
+
+The dashboard opens at `http://127.0.0.1:8000`. It reads the same SQLite database as
+the CLI (`JOBFINDER_DB` or `--database`), and can start crawls from career-page URLs.
+It binds to localhost only and rejects non-local Host headers; it is intended for a
+single local user and has no authentication for network deployment.
+
 ### 7.3 Verify installation
 
 ```bash
@@ -367,7 +392,8 @@ python -m jobfinder --help
 pytest -q
 ```
 
-If both commands succeed, you're ready.
+If both commands succeed, you're ready. The dashboard is an optional install; see
+the commands above to enable it.
 
 ---
 
@@ -396,6 +422,19 @@ python -m jobfinder search \
   --csv results.csv \
   --json-out results.json
 ```
+
+To find careers pages from company names, configure a Google Programmable Search Engine
+and its API key, then pass one or more company names:
+
+```bash
+export JOBFINDER_GOOGLE_API_KEY="your-api-key"
+export JOBFINDER_GOOGLE_CSE_ID="your-search-engine-id"
+python -m jobfinder search --query "Backend engineer Python" --company "Example Corp"
+```
+
+The search service is used only when `--company` is supplied; discovered URLs still pass
+through the crawler's URL-safety and robots checks. API credentials are read from the
+environment and must not be committed.
 
 ### 8.3 Read the output
 
@@ -444,15 +483,20 @@ Optional
   --min-score FLOAT         Drop matches below this score (0–100, default 0).
   --seed URL                Add a seed URL (repeatable).
   --seeds-file PATH         Read seed URLs from a text file, one per line.
+  --company NAME            Discover careers pages for a company (repeatable).
   --database PATH           SQLite path (overrides JOBFINDER_DB).
   --csv PATH                Write CSV export.
   --json-out PATH           Write JSON export.
   --no-robots               Disable robots.txt enforcement. DISCOURAGED.
+  --playwright              Render pages when static extraction finds no jobs.
   --verbose                 DEBUG-level logging.
 ```
 
 **Behaviour:**
-- Fetches each seed once.
+- Fetches each seed once, plus recognized public ATS feeds.
+- `--company` uses Google Programmable Search; set `JOBFINDER_GOOGLE_API_KEY` and
+  `JOBFINDER_GOOGLE_CSE_ID`.
+- `--playwright` requires `pip install -e ".[browser]"` and `playwright install chromium`.
 - All extracted jobs are upserted to SQLite (INSERT or UPDATE by `dedupe_key`).
 - **Scoring runs over the entire DB**, not just the current run's jobs. This means a fresh `--query` re-ranks all stored jobs — useful for exploring different searches against the same crawled corpus.
 
@@ -467,7 +511,24 @@ usage: jobfinder stats [--database PATH]
 #   generic_html: 4
 ```
 
-### 9.3 Exit codes
+### 9.3 `jobfinder dashboard`
+
+Run the local web dashboard over the existing SQLite database.
+
+```bash
+jobfinder dashboard [--database PATH] [--port PORT]
+```
+
+- `--database` overrides `JOBFINDER_DB`; the default is `jobfinder.sqlite3`.
+- `--port` sets the local port (default `8000`).
+- The server binds to `127.0.0.1` only. It displays stored jobs and crawl summaries,
+  supports title/skill and location search, remote/source/status filters, pagination,
+  CSV export, and starting a crawl from supplied career-page URLs.
+- Crawls use the same crawler safety checks, robots enforcement, rate limits, and
+  SQLite persistence as the CLI. Search results use the existing explainable scorer.
+- Install the optional dependencies with `pip install -e ".[dashboard]"`.
+
+### 9.4 Exit codes
 
 | Code | Meaning |
 |---|---|
@@ -495,6 +556,9 @@ Set defaults in code, or override via environment variables.
 | `max_pages_per_host` | `200` | — | Safety cap per host (advisory in Stage 2) |
 | `max_total_pages` | `5_000` | — | Safety cap per run |
 | `respect_robots` | `True` | `JOBFINDER_ROBOTS` (`1`/`0`) | Enforce `robots.txt` |
+| `playwright_fallback` | `False` | `JOBFINDER_PLAYWRIGHT` (`1`/`0`) | Render empty HTML results with Playwright |
+| `google_search_api_key` | `None` | `JOBFINDER_GOOGLE_API_KEY` | Google Programmable Search API key |
+| `google_search_engine_id` | `None` | `JOBFINDER_GOOGLE_CSE_ID` | Programmable Search Engine ID |
 | `database_path` | `"jobfinder.sqlite3"` | `JOBFINDER_DB` | SQLite file path |
 
 ### 10.2 Recommended overrides for real-world crawling
@@ -507,7 +571,10 @@ export JOBFINDER_CONCURRENCY="3"
 
 ### 10.3 Security & secrets
 
-There are **no API keys** in Stage 2. When Stage 3 adds optional APIs (e.g. Google Programmable Search for discovery), secrets must be provided via environment variables and **never committed**. An `.env.example` is provided as a template.
+Company discovery uses the optional Google Programmable Search JSON API. Its key and
+engine ID are supplied only through environment variables. Provider job feeds are
+public endpoints and require no credentials. Playwright is an optional dependency;
+neither a browser nor credentials are needed for ordinary seed-URL searches.
 
 ---
 
@@ -515,7 +582,7 @@ There are **no API keys** in Stage 2. When Stage 3 adds optional APIs (e.g. Goog
 
 ### 11.1 The request pipeline
 
-For each seed URL, the engine:
+For each seed URL (or discovered careers URL), the engine:
 
 1. **Counts against `max_total_pages`.** If exceeded, the URL is skipped.
 2. **Validates safety** with `is_safe_url()` — see §16.
@@ -529,7 +596,10 @@ For each seed URL, the engine:
 7. **Validates content-type** (must be `text/html` or `application/json`).
 8. **Enforces size limits** — both `Content-Length` and streamed size.
 9. **Decodes** as UTF-8 with replacement.
-10. **Passes to the adapter registry.**
+10. **Passes to the adapter registry.** If the page identifies a supported ATS board,
+    its public job feed is requested through the same safety, robots, retry, and host-delay checks.
+11. If no jobs were extracted and Playwright fallback is enabled, render the page and
+    run the same adapter registry over the rendered HTML.
 
 ### 11.2 Retry semantics
 
@@ -547,11 +617,16 @@ stats.failures.append({"url": "...", "reason": "http 403"})
 
 Failures never abort the run. At the end, the CLI prints aggregate counts.
 
-### 11.4 What is *not* crawled in Stage 2
+### 11.4 Stage 3 discovery and rendering
 
-- **Internal links from a careers page** are not followed. Each seed is treated as a single page. Stage 3's discovery module will add link-following (with depth limits).
-- **JavaScript-rendered pages** are not handled. They will extract zero jobs. Stage 3 adds Playwright.
-- **Cross-host redirects** are followed only if the final destination is safe. `is_safe_url()` blocks hops to private IPs.
+- Company-name discovery searches Google Programmable Search for likely careers pages;
+  it does not crawl arbitrary site links.
+- ATS links embedded in a fetched page are recognized only for Greenhouse, Lever,
+  Ashby, and Workday. Their public job feeds are then fetched as separate pages.
+- JavaScript rendering is opt-in. The browser blocks unsafe URLs and checks robots rules
+  before requesting resources. It is not a CAPTCHA, login, or anti-bot bypass.
+- Cross-host redirects are followed only if the final destination is safe.
+  `is_safe_url()` blocks hops to private IPs.
 
 ---
 
@@ -564,9 +639,10 @@ The registry is sorted by `priority` (lower first):
 | Priority | Adapter | Handles |
 |---|---|---|
 | 10 | `schema_org` | HTML containing `ld+json` with `JobPosting` |
+| 20–23 | `greenhouse`, `lever`, `ashby`, `workday` | Public provider job-feed JSON |
 | 90 | `generic_html` | Everything else |
 
-The engine tries adapters in order and **stops at the first non-empty result**. This means a page with valid JSON-LD never falls back to heuristics.
+The engine tries adapters in order and **stops at the first non-empty result**. This means a page with valid JSON-LD never falls back to heuristics. Provider adapters parse their public JSON feeds; the engine discovers those feeds from supported ATS links and board URLs.
 
 ### 12.2 `schema_org` adapter
 
@@ -605,13 +681,13 @@ When it does emit a `RawJob`:
 - `description` = text of `<main>` or `<article>` or `<body>`, first 20,000 characters
 - `source` = `"generic_html"` (a signal downstream that confidence is lower)
 
-### 12.4 Limitations of Stage 2 extraction
+### 12.4 Limitations
 
 - **No pagination handling.** A careers page listing 10 jobs on page 1 will yield those 10 jobs only.
 - **No per-job detail pages.** The generic adapter extracts the page it's on, not the pages it links to.
-- **No JS rendering.** React/Vue SPAs will yield zero jobs unless they also emit JSON-LD in the initial HTML (some do, most don't).
-
-These are explicitly Stage 3 concerns.
+- Workday's public feed currently requests the first 20 results; pagination is not yet implemented.
+- Company discovery depends on the configured Google Programmable Search Engine and its index.
+- Browser fallback is optional and requires installing both Playwright and its Chromium binary.
 
 ---
 
@@ -742,7 +818,7 @@ CREATE TABLE run_stats (
 - **Payload as JSON.** Storing the full `JobPosting` serialised means the schema can evolve without migrations. Pydantic handles validation on read.
 - **`first_seen` / `last_seen`.** Enables incremental crawling (Stage 4) to skip recently-verified jobs.
 - **No separate `skills` / `locations` tables.** Deliberately denormalised for MVP simplicity. Normalisation is a Stage 4 concern.
-- **`run_stats` table.** Every CLI invocation records a stats row. Useful for auditing.
+- **`run_stats` table.** Every completed CLI or dashboard crawl records a stats row. Useful for auditing.
 
 ### 15.3 Migrating to PostgreSQL
 
